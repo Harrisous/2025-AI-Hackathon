@@ -12,7 +12,7 @@ import pickle
 
 
 class FaceRecognition:
-    def __init__(self, known_faces_path="known_faces.pkl"):
+    def __init__(self, known_faces_path="data/known_faces.pkl"):
         # Load or initialize face database
         self.known_faces = self._load_known_faces(known_faces_path)
         self.threshold = 0.6
@@ -43,7 +43,7 @@ class FaceRecognition:
         
         return identity, min_distance
     
-    def process_image(self, image_path, output_path):
+    def process_image(self, image_path):
         """Process a single image: detect faces, recognize, and save with bounding boxes"""
         # Read image
         image = cv2.imread(str(image_path))
@@ -57,49 +57,44 @@ class FaceRecognition:
         face_locations = face_recognition.face_locations(rgb_image)
         face_encodings = face_recognition.face_encodings(rgb_image, face_locations)
         
+        result = list() # to store the results
         # Process each detected face
         for (top, right, bottom, left), encoding in zip(face_locations, face_encodings):
             # Identify face
             identity, distance = self.identify_face(encoding)
-            
-            # Draw bounding box and label
-            color = (0, 255, 0) if distance < self.threshold else (0, 165, 255)
-            cv2.rectangle(image, (left, top), (right, bottom), color, 2)
-            
-            label = f"{identity} ({distance:.2f})" if identity else f"Unknown ({distance:.2f})"
-            cv2.putText(image, label, (left, top-10), cv2.FONT_HERSHEY_SIMPLEX, 
-                       0.6, color, 2)
-        
-        # Save output image
-        cv2.imwrite(str(output_path), image)
-        print(f"Processed: {image_path} -> {output_path} ({len(face_locations)} faces)")
-
+            if identity != None:
+                result.append(identity)
+        return result
 
 def main():
-    # Load all .jpg and .png files from the images/ directory into images as a list
-    import glob
+    from camera import Camera
+    import os
+    import time
 
-    images = glob.glob("images/*.jpg") + glob.glob("images/*.png")
-    output_dir = "output"
-    known_faces = "known_faces.pkl"
-    threshold = 0.6
-    
-    # Create output directory
-    output_dir = Path(output_dir)
-    output_dir.mkdir(exist_ok=True)
+    known_faces = os.path.join("data","known_faces.pkl")
+    threshold = 0.3
     
     # Initialize face recognition
     recognizer = FaceRecognition(known_faces)
     recognizer.threshold = threshold
 
     # Process images
-    for image_path in images:
-        image_path = Path(image_path)
-        output_path = output_dir / f"detected_{image_path.name}"
-        recognizer.process_image(image_path, output_path)
-    
-    print(f"\nProcessed {len(images)} images")
-
+    try:
+        cam = Camera()
+        cam.open()
+        print("Video monitoring...")
+        last_pic_time = time.time() - 10
+        while True:
+            img_path = cam.capture_frame(save_path=os.path.join("temp", "monitor.jpg"))
+            if img_path and os.path.isfile(img_path):
+                result = recognizer.process_image(img_path)
+            else:
+                print("Camera failed to capture image or file not found!")
+            print(result)
+            time.sleep(1)
+        cam.close()
+    except:
+        cam.close()
 
 if __name__ == "__main__":
     main()

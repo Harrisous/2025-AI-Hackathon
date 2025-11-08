@@ -14,6 +14,7 @@ from camera import Camera
 # from recognize_faces import FaceRecognition
 import cv2
 import face_recognition
+from recognize_faces import FaceRecognition
 
 api_url_base = "https://2025-ai-hackathon-raspberry-api-api-production.up.railway.app/upload/"
 QUEUE_PATH = "temp/queue"
@@ -27,14 +28,22 @@ def check_network(url="https://www.google.com", timeout=3):
     except:
         return False
 
-def uploader(save_path, api_url_base, file_type: Literal["image", "audio", "gps"]):
+def uploader(save_path, api_url_base, file_type: Literal["image", "audio", "gps"], tags=None):
     api_url = api_url_base + file_type
     key = 'image' if file_type == 'image' else 'audio'
     content_type = 'image/jpeg' if file_type == 'image' else 'audio/wav'
+    files = None
+    data = None
+
     with open(save_path, 'rb') as f:
         files = {key: (save_path, f, content_type)}
+        # 用 data 发送表单字段；用 json 发送 JSON 数据（看后端支持哪种）
+        if tags is not None:
+            # 方案1：以字符串（如 tags=["a", "b"]）
+            data = {'tags': str(tags)}
+            # 如需 json，则可以用 requests.post(..., json={...})
         try:
-            response = requests.post(api_url, files=files, timeout=10)
+            response = requests.post(api_url, files=files, data=data, timeout=10)
         except Exception as e:
             print(e)
             return None
@@ -50,25 +59,40 @@ def audio_worker(interval=5):
         queue.put({"type": "audio", "path": path})
 
 def video_worker():
+    # instantiate FaceRecognition
+    known_faces = os.path.join("data","known_faces.pkl")
+    threshold = 0.3
+    recognizer = FaceRecognition(known_faces)
+    recognizer.threshold = threshold
+
+    # instantiate the camera
     cam = Camera()
-    cam.open()
-    print("Video monitoring...")
-    last_pic_time = time.time() - 10
-    while True:
-        img_path = cam.capture_frame(save_path=os.path.join("temp", "monitor.jpg"))
-        # 使用face_recognizer检测人物
-        image = cv2.imread(img_path)
-        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        face_locations = face_recognition.face_locations(rgb_image)
-        has_person = len(face_locations) > 0
-        if has_person and (time.time() - last_pic_time >= 10):
-            # 重新保存一份作为抓拍并入队
-            snapshot_path = cam.capture_frame()
-            print(f"Detected face, image saved: {snapshot_path}")
-            queue.put({"type": "image", "path": snapshot_path})
-            last_pic_time = time.time()
-        time.sleep(1)
-    cam.close()
+    try:
+        cam.open()
+        print("Video monitoring...")
+        last_pic_time = time.time() - 10
+        while True:
+            img_path = cam.capture_frame(save_path=os.path.join("temp", "monitor.jpg"))
+            # detect if there is a person
+            # image = cv2.imread(img_path)
+            # rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            # face_locations = face_recognition.face_locations(rgb_image)
+            # has_person = len(face_locations) > 0
+
+            # detect if there is a known person
+            result = None
+            if img_path and os.path.isfile(img_path):
+                result = recognizer.process_image(img_path)
+                print(result)
+            if result and (time.time() - last_pic_time >= 10):
+                # 重新保存一份作为抓拍并入队
+                snapshot_path = cam.capture_frame()
+                print(f"Detected face, image saved: {snapshot_path}")
+                queue.put({"type": "image", "path": snapshot_path})
+                last_pic_time = time.time()
+            time.sleep(1)
+    finally:
+        cam.close()
 
 
 def upload_worker():
