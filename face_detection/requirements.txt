@@ -1,5 +1,4 @@
 opencv-python
-mediapipe
-onnxruntime
 numpy
 scikit-learn
+face_recognition
