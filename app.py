@@ -98,19 +98,50 @@ def upload_image():
             # Extract timestamp from filename: pic_2025-11-08+01-07.jpg
             # Format: pic_YYYY-MM-DD+HH-MM.jpg
             try:
-                parts = filename.replace('pic_', '').replace('.jpg', '').split('+')
-                date_part = parts[0]  # 2025-11-08
-                time_part = parts[1].replace('-', ':')  # 01:07 -> 01:07
-                captured_at = f"{date_part} {time_part}:00"  # 2025-11-08 01:07:00
+                from datetime import datetime
                 
-                # Insert into images table
+                # Parse timestamp from filename or use current time
+                if 'pic_' in filename and '+' in filename:
+                    parts = filename.replace('pic_', '').replace('.jpg', '').replace('.png', '').split('+')
+                    date_part = parts[0]  # 2025-11-08
+                    time_part = parts[1].replace('-', ':')  # 01:07 -> 01:07
+                    captured_at = datetime.strptime(f"{date_part} {time_part}:00", "%Y-%m-%d %H:%M:%S")
+                else:
+                    captured_at = datetime.now()
+                
+                # Find matching audio chunk based on timestamp
+                # Image captured_at should fall between audio start_time and end_time
+                audio_chunk_id = None
+                try:
+                    result = supabase.table('audio_chunks').select('id, start_time, end_time').execute()
+                    for chunk in result.data:
+                        start = datetime.fromisoformat(chunk['start_time'].replace('Z', '+00:00'))
+                        end = datetime.fromisoformat(chunk['end_time'].replace('Z', '+00:00'))
+                        
+                        # Make captured_at timezone-aware if needed
+                        if captured_at.tzinfo is None:
+                            from datetime import timezone
+                            captured_at_aware = captured_at.replace(tzinfo=timezone.utc)
+                        else:
+                            captured_at_aware = captured_at
+                        
+                        if start <= captured_at_aware <= end:
+                            audio_chunk_id = chunk['id']
+                            print(f"✅ Matched image to audio chunk: {audio_chunk_id}")
+                            break
+                except Exception as e:
+                    print(f"⚠️  Could not find matching audio chunk: {e}")
+                
+                # Insert into images table with audio_chunk_id
                 supabase.table('images').insert({
                     'filename': filename,
                     'storage_url': storage_url,
-                    'captured_at': captured_at
+                    'captured_at': captured_at.isoformat(),
+                    'audio_chunk_id': audio_chunk_id
                 }).execute()
+                print(f"✅ Image inserted with audio_chunk_id: {audio_chunk_id}")
             except Exception as e:
-                print(f"Warning: Could not insert into database: {e}")
+                print(f"⚠️  Could not insert into database: {e}")
         else:
             # Fallback to local storage
             filepath = os.path.join(IMAGES_FOLDER, filename)
