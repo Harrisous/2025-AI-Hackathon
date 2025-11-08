@@ -68,6 +68,23 @@ def upload_image():
                 file_options={"content-type": "image/jpeg", "upsert": "true"}
             )
             storage_url = supabase.storage.from_('alzheimer-images').get_public_url(filename)
+            
+            # Extract timestamp from filename: pic_2025-11-08+01-07.jpg
+            # Format: pic_YYYY-MM-DD+HH-MM.jpg
+            try:
+                parts = filename.replace('pic_', '').replace('.jpg', '').split('+')
+                date_part = parts[0]  # 2025-11-08
+                time_part = parts[1].replace('-', ':')  # 01:07 -> 01:07
+                captured_at = f"{date_part} {time_part}:00"  # 2025-11-08 01:07:00
+                
+                # Insert into images table
+                supabase.table('images').insert({
+                    'filename': filename,
+                    'storage_url': storage_url,
+                    'captured_at': captured_at
+                }).execute()
+            except Exception as e:
+                print(f"Warning: Could not insert into database: {e}")
         else:
             # Fallback to local storage
             filepath = os.path.join(IMAGES_FOLDER, filename)
@@ -116,6 +133,28 @@ def upload_audio():
                 file_options={"content-type": "audio/wav", "upsert": "true"}
             )
             storage_url = supabase.storage.from_('alzheimer-audio').get_public_url(filename)
+            
+            # Extract timestamp from filename: audio_2025-11-08+01-05.wav
+            # Format: audio_YYYY-MM-DD+HH-MM.wav (end time of 5-min chunk)
+            try:
+                parts = filename.replace('audio_', '').replace('.wav', '').split('+')
+                date_part = parts[0]  # 2025-11-08
+                end_time_part = parts[1].replace('-', ':')  # 01:05
+                
+                # Calculate start and end times (5-minute chunk)
+                from datetime import datetime, timedelta
+                end_time = datetime.strptime(f"{date_part} {end_time_part}:00", "%Y-%m-%d %H:%M:%S")
+                start_time = end_time - timedelta(minutes=5)
+                
+                # Insert into audio_chunks table
+                supabase.table('audio_chunks').insert({
+                    'filename': filename,
+                    'storage_url': storage_url,
+                    'start_time': start_time.isoformat(),
+                    'end_time': end_time.isoformat()
+                }).execute()
+            except Exception as e:
+                print(f"Warning: Could not insert into database: {e}")
         else:
             # Fallback to local storage
             filepath = os.path.join(AUDIO_FOLDER, filename)
