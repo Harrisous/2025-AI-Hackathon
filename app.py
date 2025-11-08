@@ -133,6 +133,40 @@ def upload_batch():
         }), 500
 
 
+@app.route('/files', methods=['GET'])
+def list_files():
+    """List all uploaded files"""
+    try:
+        images = []
+        audio = []
+        
+        # List images
+        if os.path.exists(IMAGES_FOLDER):
+            images = sorted([f for f in os.listdir(IMAGES_FOLDER) if f.endswith('.jpg')])
+        
+        # List audio
+        if os.path.exists(AUDIO_FOLDER):
+            audio = sorted([f for f in os.listdir(AUDIO_FOLDER) if f.endswith('.wav')])
+        
+        return jsonify({
+            'success': True,
+            'images': {
+                'count': len(images),
+                'files': images
+            },
+            'audio': {
+                'count': len(audio),
+                'files': audio
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 if __name__ == '__main__':
     print("=" * 60)
     print("Alzheimer's Camera Backend - Simple Version")
