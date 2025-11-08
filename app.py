@@ -79,9 +79,26 @@ def upload_image():
         
         file = request.files['image']
         
+        # Check if folder parameter is provided (e.g., "temp")
+        folder = request.form.get('folder', '')
+        
+        # Get detected persons (sent as JSON array or comma-separated string)
+        detected_persons = None
+        if 'detected_persons' in request.form:
+            import json
+            try:
+                # Try parsing as JSON array
+                detected_persons = json.loads(request.form.get('detected_persons'))
+            except:
+                # Fall back to comma-separated string
+                detected_persons = [p.strip() for p in request.form.get('detected_persons').split(',')]
+        
         # Use original filename from Raspberry Pi
         # Format: pic_2025-11-08+01-07.jpg (date + hour-minute)
-        filename = file.filename if file.filename else f"image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+        base_filename = file.filename if file.filename else f"image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+        
+        # Add folder prefix if provided
+        filename = f"{folder}/{base_filename}" if folder else base_filename
         
         # Read file data
         file_data = file.read()
@@ -141,14 +158,15 @@ def upload_image():
                 except Exception as e:
                     print(f"⚠️  Could not find matching audio chunk: {e}")
                 
-                # Insert into images table with audio_chunk_id
+                # Insert into images table with audio_chunk_id and detected_persons
                 supabase.table('images').insert({
                     'filename': filename,
                     'storage_url': storage_url,
                     'captured_at': captured_at.isoformat(),
+                    'detected_persons': detected_persons,
                     'audio_chunk_id': audio_chunk_id
                 }).execute()
-                print(f"✅ Image inserted with audio_chunk_id: {audio_chunk_id}")
+                print(f"✅ Image inserted with audio_chunk_id: {audio_chunk_id}, detected_persons: {detected_persons}")
             except Exception as e:
                 print(f"⚠️  Could not insert into database: {e}")
         else:

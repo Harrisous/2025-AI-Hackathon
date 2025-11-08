@@ -19,6 +19,7 @@ CREATE TABLE images (
     filename TEXT NOT NULL UNIQUE,
     storage_url TEXT NOT NULL,
     captured_at TIMESTAMP NOT NULL,
+    detected_persons TEXT[] DEFAULT NULL,
     audio_chunk_id UUID REFERENCES audio_chunks(id) ON DELETE SET NULL,
     uploaded_at TIMESTAMP DEFAULT NOW()
 );
