@@ -1,6 +1,5 @@
 """
-Simple Backend API - Just Receive Images and Audio
-Confirms receipt, that's it!
+Backend API - Receive Images and Audio, Store in Supabase
 """
 
 from flask import Flask, request, jsonify
@@ -8,12 +7,22 @@ from flask_cors import CORS
 import os
 from datetime import datetime
 from pathlib import Path
+from supabase import create_client, Client
 
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)
 
-# Configuration
+# Supabase Configuration
+SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
+SUPABASE_KEY = os.environ.get('SUPABASE_KEY', '')
+
+# Initialize Supabase client
+supabase: Client = None
+if SUPABASE_URL and SUPABASE_KEY:
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Local storage as fallback
 UPLOAD_FOLDER = 'data'
 IMAGES_FOLDER = os.path.join(UPLOAD_FOLDER, 'images')
 AUDIO_FOLDER = os.path.join(UPLOAD_FOLDER, 'audio')
@@ -34,7 +43,7 @@ def health_check():
 
 @app.route('/upload/image', methods=['POST'])
 def upload_image():
-    """Receive image and confirm"""
+    """Receive image and store in Supabase"""
     try:
         if 'image' not in request.files:
             return jsonify({
@@ -47,15 +56,30 @@ def upload_image():
         # Generate filename with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         filename = f"image_{timestamp}.jpg"
-        filepath = os.path.join(IMAGES_FOLDER, filename)
         
-        # Save file
-        file.save(filepath)
+        # Read file data
+        file_data = file.read()
+        
+        # Upload to Supabase Storage
+        if supabase:
+            supabase.storage.from_('alzheimer-images').upload(
+                filename,
+                file_data,
+                file_options={"content-type": "image/jpeg"}
+            )
+            storage_url = supabase.storage.from_('alzheimer-images').get_public_url(filename)
+        else:
+            # Fallback to local storage
+            filepath = os.path.join(IMAGES_FOLDER, filename)
+            with open(filepath, 'wb') as f:
+                f.write(file_data)
+            storage_url = f"/local/{filename}"
         
         return jsonify({
             'success': True,
-            'message': 'Image received successfully',
-            'filename': filename
+            'message': 'Image received and stored successfully',
+            'filename': filename,
+            'url': storage_url
         }), 200
         
     except Exception as e:
@@ -67,7 +91,7 @@ def upload_image():
 
 @app.route('/upload/audio', methods=['POST'])
 def upload_audio():
-    """Receive audio and confirm"""
+    """Receive audio and store in Supabase"""
     try:
         if 'audio' not in request.files:
             return jsonify({
@@ -80,15 +104,30 @@ def upload_audio():
         # Generate filename with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         filename = f"audio_{timestamp}.wav"
-        filepath = os.path.join(AUDIO_FOLDER, filename)
         
-        # Save file
-        file.save(filepath)
+        # Read file data
+        file_data = file.read()
+        
+        # Upload to Supabase Storage
+        if supabase:
+            supabase.storage.from_('alzheimer-audio').upload(
+                filename,
+                file_data,
+                file_options={"content-type": "audio/wav"}
+            )
+            storage_url = supabase.storage.from_('alzheimer-audio').get_public_url(filename)
+        else:
+            # Fallback to local storage
+            filepath = os.path.join(AUDIO_FOLDER, filename)
+            with open(filepath, 'wb') as f:
+                f.write(file_data)
+            storage_url = f"/local/{filename}"
         
         return jsonify({
             'success': True,
-            'message': 'Audio received successfully',
-            'filename': filename
+            'message': 'Audio received and stored successfully',
+            'filename': filename,
+            'url': storage_url
         }), 200
         
     except Exception as e:
