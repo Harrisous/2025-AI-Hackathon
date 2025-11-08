@@ -82,7 +82,7 @@ def main():
     images = glob.glob("images/*.jpg") + glob.glob("images/*.png")
     output_dir = "output"
     known_faces = "known_faces.pkl"
-    threshold = 0.6
+    threshold = 0.45
     
     # Create output directory
     output_dir = Path(output_dir)
