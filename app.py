@@ -174,28 +174,37 @@ def upload_batch():
 
 @app.route('/files', methods=['GET'])
 def list_files():
-    """List all uploaded files"""
+    """List all uploaded files from Supabase"""
     try:
         images = []
         audio = []
         
-        # List images
-        if os.path.exists(IMAGES_FOLDER):
-            images = sorted([f for f in os.listdir(IMAGES_FOLDER) if f.endswith('.jpg')])
-        
-        # List audio
-        if os.path.exists(AUDIO_FOLDER):
-            audio = sorted([f for f in os.listdir(AUDIO_FOLDER) if f.endswith('.wav')])
+        # List from Supabase if available
+        if supabase:
+            # List images
+            image_list = supabase.storage.from_('alzheimer-images').list()
+            images = [f['name'] for f in image_list if f['name'].endswith('.jpg')]
+            
+            # List audio
+            audio_list = supabase.storage.from_('alzheimer-audio').list()
+            audio = [f['name'] for f in audio_list if f['name'].endswith('.wav')]
+        else:
+            # Fallback to local storage
+            if os.path.exists(IMAGES_FOLDER):
+                images = sorted([f for f in os.listdir(IMAGES_FOLDER) if f.endswith('.jpg')])
+            
+            if os.path.exists(AUDIO_FOLDER):
+                audio = sorted([f for f in os.listdir(AUDIO_FOLDER) if f.endswith('.wav')])
         
         return jsonify({
             'success': True,
             'images': {
                 'count': len(images),
-                'files': images
+                'files': sorted(images)
             },
             'audio': {
                 'count': len(audio),
-                'files': audio
+                'files': sorted(audio)
             }
         }), 200
         
