@@ -53,9 +53,9 @@ def upload_image():
         
         file = request.files['image']
         
-        # Generate filename with timestamp
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        filename = f"image_{timestamp}.jpg"
+        # Use original filename from Raspberry Pi
+        # Format: pic_2025-11-08+01-07.jpg (date + hour-minute)
+        filename = file.filename if file.filename else f"image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
         
         # Read file data
         file_data = file.read()
@@ -65,7 +65,7 @@ def upload_image():
             supabase.storage.from_('alzheimer-images').upload(
                 filename,
                 file_data,
-                file_options={"content-type": "image/jpeg"}
+                file_options={"content-type": "image/jpeg", "upsert": "true"}
             )
             storage_url = supabase.storage.from_('alzheimer-images').get_public_url(filename)
         else:
@@ -101,9 +101,9 @@ def upload_audio():
         
         file = request.files['audio']
         
-        # Generate filename with timestamp
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        filename = f"audio_{timestamp}.wav"
+        # Use original filename from Raspberry Pi
+        # Format: 01-05.wav, 01-10.wav (hour-minute, end time of 5-min chunk)
+        filename = file.filename if file.filename else f"audio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.wav"
         
         # Read file data
         file_data = file.read()
@@ -113,7 +113,7 @@ def upload_audio():
             supabase.storage.from_('alzheimer-audio').upload(
                 filename,
                 file_data,
-                file_options={"content-type": "audio/wav"}
+                file_options={"content-type": "audio/wav", "upsert": "true"}
             )
             storage_url = supabase.storage.from_('alzheimer-audio').get_public_url(filename)
         else:
