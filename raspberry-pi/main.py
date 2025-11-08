@@ -67,7 +67,7 @@ def video_worker():
                 print(f"Detected face, image saved: {snapshot_path}")
                 queue.put({"type": "image", "path": snapshot_path, "tags": result})
                 last_pic_time = time.time()
-            time.sleep(0.5)
+            time.sleep(1)
     finally:
         cam.close()
 
