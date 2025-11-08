@@ -1,24 +1,24 @@
+////
+////  ContentView.swift
+////  Memora
+////
+////  Created by Rae Wang on 11/7/25.
+////
 //
-//  ContentView.swift
-//  Memora
+//import SwiftUI
 //
-//  Created by Rae Wang on 11/7/25.
+//struct ContentView: View {
+//    var body: some View {
+//        VStack {
+//            Image(systemName: "globe")
+//                .imageScale(.large)
+//                .foregroundStyle(.tint)
+//            Text("Hello, world!")
+//        }
+//        .padding()
+//    }
+//}
 //
-
-import SwiftUI
-
-struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
-
-#Preview {
-    ContentView()
-}
+//#Preview {
+//    ContentView()
+//}
