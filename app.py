@@ -313,8 +313,8 @@ def verify_voice():
             
             return jsonify({
                 'success': True,
-                'is_patient_voice': is_patient,
-                'should_take_photos': is_patient,
+                'is_patient_voice': bool(is_patient),
+                'should_take_photos': bool(is_patient),
                 'max_similarity': float(max_similarity),
                 'mean_similarity': float(mean_similarity),
                 'threshold': 0.70,
