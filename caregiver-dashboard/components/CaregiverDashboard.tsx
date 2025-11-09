@@ -1,36 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 // FIX: Import Screen type to be used by the navigateTo prop.
 import { Screen } from '../types';
+import { calculateMetrics, DashboardMetrics } from '../api/metrics';
 
-const forgettingCurveData = [
-  { name: '1h', recall: 90 }, { name: '8h', recall: 65 },
-  { name: '1d', recall: 50 }, { name: '2d', recall: 42 },
-  { name: '5d', recall: 30 }, { name: '7d', recall: 25 },
-];
-
-const learningCurveData = [
-    { session: 'S1', score: 55 }, { session: 'S2', score: 58 },
-    { session: 'S3', score: 62 }, { session: 'S4', score: 61 },
-    { session: 'S5', score: 65 }, { session: 'S6', score: 70 },
-    { session: 'S7', score: 72 },
-];
-
-const correctRateData = [{ name: 'Correct', value: 78 }, { name: 'Incorrect', value: 22 }];
 const COLORS = ['#A7D2D3', '#E5B8A2'];
-
-const attemptsData = [
-    { name: '1 attempt', value: 65 },
-    { name: '2 attempts', value: 25 },
-    { name: '3+ attempts', value: 10 },
-]
 const ATTEMPT_COLORS = ['#A7D2D3', '#E5B8A2', '#F2D3AC'];
-
-const improvementData = [
-    { week: 'W1', score: 65 }, { week: 'W2', score: 68 },
-    { week: 'W3', score: 72 }, { week: 'W4', score: 71 },
-    { week: 'W5', score: 75 }, { week: 'W6', score: 78 },
-]
 
 // FIX: Define props interface to accept an optional navigateTo function, resolving the type error in App.tsx.
 interface CaregiverDashboardProps {
@@ -56,6 +31,32 @@ const ChartCard: React.FC<{ title: string; children: React.ReactNode }> = ({ tit
 
 // FIX: Update the component to accept props.
 const CaregiverDashboard: React.FC<CaregiverDashboardProps> = ({ navigateTo }) => {
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+
+  useEffect(() => {
+    // Load metrics from stored sessions
+    const loadedMetrics = calculateMetrics();
+    setMetrics(loadedMetrics);
+
+    // Refresh metrics every 30 seconds
+    const interval = setInterval(() => {
+      const refreshedMetrics = calculateMetrics();
+      setMetrics(refreshedMetrics);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!metrics) {
+    return (
+      <div className="min-h-screen bg-[#F8F5F2] flex items-center justify-center">
+        <p className="text-xl text-gray-600">Loading metrics...</p>
+      </div>
+    );
+  }
+
+  const { forgettingCurve, learningCurve, correctRate, attemptsData, improvementData } = metrics;
+
   return (
     <div className="min-h-screen bg-[#F8F5F2] text-[#362E2B] p-4 sm:p-6 md:p-8">
       <div className="max-w-7xl mx-auto">
@@ -75,7 +76,7 @@ const CaregiverDashboard: React.FC<CaregiverDashboardProps> = ({ navigateTo }) =
         <main className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <ChartCard title="Forgetting Curve">
                 <ResponsiveContainer>
-                    <LineChart data={forgettingCurveData}>
+                    <LineChart data={forgettingCurve}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
                         <YAxis unit="%" />
@@ -88,7 +89,7 @@ const CaregiverDashboard: React.FC<CaregiverDashboardProps> = ({ navigateTo }) =
 
             <ChartCard title="Learning Curve">
                 <ResponsiveContainer>
-                    <LineChart data={learningCurveData}>
+                    <LineChart data={learningCurve}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="session" />
                         <YAxis unit="%" domain={[50, 80]}/>
@@ -102,8 +103,8 @@ const CaregiverDashboard: React.FC<CaregiverDashboardProps> = ({ navigateTo }) =
             <ChartCard title="Q&A Correct Rate">
                 <ResponsiveContainer>
                     <PieChart>
-                        <Pie data={correctRateData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                            {correctRateData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                        <Pie data={correctRate} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                            {correctRate.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                         </Pie>
                         <Tooltip />
                         <Legend />
