@@ -3,6 +3,7 @@ services:
     name: memerai-backend
     env: python
     branch: john/RAG-AGENT
+    rootDir: rag_agent
     buildCommand: pip install -r requirements.txt
     startCommand: python memerai_ui.py
     envVars:
