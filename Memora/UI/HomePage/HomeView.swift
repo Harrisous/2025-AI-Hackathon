@@ -56,7 +56,7 @@ struct HomeView: View {
                                 //.shadow(color: Palette.shadow, radius: 14, x: 0, y: 10)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 28, style: .continuous)
-                                        .stroke(Palette.ink.opacity(0.06), lineWidth: 1)
+                                        .stroke(Palette.blush.opacity(0.06), lineWidth: 1)
                                 )
                                 .rotationEffect(.degrees(rotate ? 360 : 0))
                                 .animation(.linear(duration: 60).repeatForever(autoreverses: false), value: rotate)
@@ -65,7 +65,6 @@ struct HomeView: View {
                                 .padding(.top, 80)
 
                             // Start Recall button
-                            // <-- MODIFIED: Changed to NavigationLink(value:label:)
                             NavigationLink(value: NavigationDestination.recall) {
                                 HStack(spacing: 12) {
                                     Image(systemName: "play.circle.fill")
@@ -73,16 +72,100 @@ struct HomeView: View {
                                     Text("Start Memory Training")
                                         .font(.system(size: 28))
                                 }
-                                .foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0))
+                                .foregroundColor(.white)
                                 .font(.system(size: 30, design: .rounded).weight(.semibold))
-                                .padding(.vertical, 20)
-                                .padding(.horizontal, 30)
-                                .background(Palette.blush)
-                                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                                .shadow(color: Palette.shadow, radius: 10, x: 0, y: 6)
+                                .padding(.vertical, 22)
+                                .padding(.horizontal, 34)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 26, style: .continuous)
+                                        // ✅ 1️⃣ base color changed to #F0A04B
+                                        .fill(
+                                            LinearGradient(colors: [
+                                                Color(red: 240/255, green: 160/255, blue: 75/255),  // #F0A04B
+                                                Color(red: 255/255, green: 195/255, blue: 110/255)  // lighter golden tone
+                                            ], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                        )
+                                        // 2️⃣ Inner bevel shadow
+                                        .overlay {
+                                            RoundedRectangle(cornerRadius: 26)
+                                                .stroke(Color.black.opacity(0.25), lineWidth: 6)
+                                                .blur(radius: 6)
+                                                .mask(
+                                                    RoundedRectangle(cornerRadius: 26)
+                                                        .fill(
+                                                            LinearGradient(colors: [.black, .clear],
+                                                                           startPoint: .topLeading,
+                                                                           endPoint: .bottomTrailing)
+                                                        )
+                                                )
+                                        }
+                                        // 3️⃣ Highlight stroke
+                                        .overlay {
+                                            RoundedRectangle(cornerRadius: 26)
+                                                .strokeBorder(
+                                                    LinearGradient(colors: [
+                                                        Color.white.opacity(0.85),
+                                                        Color.white.opacity(0.25)
+                                                    ], startPoint: .topLeading, endPoint: .bottomTrailing),
+                                                    lineWidth: 1.5
+                                                )
+                                        }
+                                        // 4️⃣ Glass gloss
+                                        .overlay {
+                                            RoundedRectangle(cornerRadius: 26)
+                                                .fill(
+                                                    LinearGradient(colors: [
+                                                        Color.white.opacity(0.25),
+                                                        Color.white.opacity(0.0)
+                                                    ], startPoint: .top, endPoint: .bottom)
+                                                )
+                                                .blendMode(.screen)
+                                                .clipShape(
+                                                    RoundedRectangle(cornerRadius: 26).inset(by: 6)
+                                                )
+                                                .mask(
+                                                    LinearGradient(colors: [.white, .white, .clear],
+                                                                   startPoint: .topLeading,
+                                                                   endPoint: .bottomTrailing)
+                                                )
+                                                .opacity(0.6)
+                                        }
+                                        // 5️⃣ Warm glow stroke (keep same tone)
+                                        .overlay {
+                                            RoundedRectangle(cornerRadius: 26)
+                                                .stroke(Color(red: 240/255, green: 160/255, blue: 75/255).opacity(0.6), lineWidth: 3)
+                                                .blur(radius: 6)
+                                        }
+                                        // 6️⃣ Shadows
+                                        .shadow(color: Color.black.opacity(0.28), radius: 16, x: 0, y: 10)
+                                        .shadow(color: Color(red: 240/255, green: 160/255, blue: 75/255).opacity(0.35), radius: 22, x: 0, y: 2)
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
                                 .accessibilityLabel("Start Recall")
                             }
                             .padding(.top, 10)
+
+
+
+
+
+//                            NavigationLink(value: NavigationDestination.recall) {
+//                                HStack(spacing: 12) {
+//                                    Image(systemName: "play.circle.fill")
+//                                        .font(.system(size: 28))
+//                                    Text("Start Memory Training")
+//                                        .font(.system(size: 28))
+//                                }
+//                                .foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0))
+//                                .font(.system(size: 30, design: .rounded).weight(.semibold))
+//                                .padding(.vertical, 20)
+//                                .padding(.horizontal, 30)
+//                                .background(Palette.blush)
+//                                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+//                                .shadow(color: Palette.shadow, radius: 10, x: 0, y: 6)
+//                                .accessibilityLabel("Start Recall")
+//                            }
+//                            .padding(.top, 10)
                             
                             // Grid layout for menu buttons
                             LazyVGrid(columns: [
@@ -98,7 +181,7 @@ struct HomeView: View {
                                 }
                                 
                                 NavigationLink(value: NavigationDestination.caregiverDashboard) {
-                                    GridMenuButton(icon: "person.2.fill", title: "Caregiver Dashboard", color: Palette.button2)
+                                    GridMenuButton(icon: "person.2.fill", title: "Caregiver Dashboard", color: Palette.button)
                                 }
                             }
                             .padding(.horizontal, 40)
