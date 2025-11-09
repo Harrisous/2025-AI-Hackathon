@@ -29,6 +29,7 @@ class MemoryRAGAgent:
             supabase_key or os.getenv("SUPABASE_KEY")
         )
         self.openai = OpenAI(api_key=openai_api_key or os.getenv("OPENAI_API_KEY"))
+        self.embedding_model = "text-embedding-3-small"  # OpenAI embedding model
         
     def process_audio_chunk(self, audio_chunk_id: str) -> Dict:
         """
@@ -133,16 +134,39 @@ Focus on:
                 "person_interactions": []
             }
     
-    def _store_conversation_summary(self, audio_chunk_id: str, analysis: Dict):
-        """Store conversation summary in database"""
+    def _generate_embedding(self, text: str) -> List[float]:
+        """Generate embedding for text using OpenAI"""
         try:
-            self.supabase.table('conversation_summaries').insert({
+            response = self.openai.embeddings.create(
+                model=self.embedding_model,
+                input=text
+            )
+            return response.data[0].embedding
+        except Exception as e:
+            print(f"Error generating embedding: {e}")
+            return None
+    
+    def _store_conversation_summary(self, audio_chunk_id: str, analysis: Dict):
+        """Store conversation summary in database with embedding"""
+        try:
+            summary = analysis.get('summary', '')
+            
+            # Generate embedding for the summary
+            embedding = self._generate_embedding(summary)
+            
+            insert_data = {
                 'audio_chunk_id': audio_chunk_id,
-                'summary': analysis.get('summary', ''),
+                'summary': summary,
                 'sentiment': analysis.get('sentiment', 'neutral'),
                 'topics': analysis.get('topics', []),
                 'key_points': analysis.get('key_points', [])
-            }).execute()
+            }
+            
+            # Add embedding if generated successfully
+            if embedding:
+                insert_data['embedding'] = embedding
+            
+            self.supabase.table('conversation_summaries').insert(insert_data).execute()
         except Exception as e:
             print(f"Error storing conversation summary: {e}")
     
@@ -161,39 +185,59 @@ Focus on:
             print(f"Error storing person interactions: {e}")
     
     def _store_memory_events(self, audio_chunk_id: str, analysis: Dict, audio_chunk: Dict):
-        """Store memory events in database"""
+        """Store memory events in database with embeddings"""
         try:
             events = analysis.get('memory_events', [])
             for event in events:
                 # Use audio chunk end_time as event time
                 event_time = audio_chunk.get('end_time', datetime.now().isoformat())
+                event_description = event.get('event_description', '')
                 
-                self.supabase.table('memory_events').insert({
+                # Generate embedding for the event description
+                embedding = self._generate_embedding(event_description)
+                
+                insert_data = {
                     'audio_chunk_id': audio_chunk_id,
                     'event_type': event.get('event_type', 'other'),
-                    'event_description': event.get('event_description', ''),
+                    'event_description': event_description,
                     'participants': event.get('participants', []),
                     'event_time': event_time,
                     'importance_score': event.get('importance_score', 0.5)
-                }).execute()
+                }
+                
+                # Add embedding if generated successfully
+                if embedding:
+                    insert_data['embedding'] = embedding
+                
+                self.supabase.table('memory_events').insert(insert_data).execute()
         except Exception as e:
             print(f"Error storing memory events: {e}")
     
     def query_memories(self, query: str, days_back: int = 7) -> str:
         """
-        Query memories using natural language
+        Query memories using natural language with semantic search
         Examples:
         - "What did I do yesterday?"
         - "Who visited me this week?"
         - "Did I take my medication today?"
         """
+        # Generate embedding for the query
+        query_embedding = self._generate_embedding(query)
+        
         # Get relevant time range
         end_time = datetime.now()
         start_time = end_time - timedelta(days=days_back)
         
-        # Retrieve relevant data
-        summaries = self._get_recent_summaries(start_time, end_time)
-        events = self._get_recent_events(start_time, end_time)
+        # Use semantic search to find similar conversations and events
+        if query_embedding:
+            summaries = self._semantic_search_summaries(query_embedding, start_time, end_time)
+            events = self._semantic_search_events(query_embedding, start_time, end_time)
+        else:
+            # Fallback to time-based retrieval if embedding fails
+            summaries = self._get_recent_summaries(start_time, end_time)
+            events = self._get_recent_events(start_time, end_time)
+        
+        # Get person interactions (no embedding search for these)
         interactions = self._get_recent_interactions(start_time, end_time)
         
         # Build context for LLM
@@ -203,6 +247,54 @@ Focus on:
         answer = self._generate_answer(query, context)
         
         return answer
+    
+    def _semantic_search_summaries(self, query_embedding: List[float], start_time: datetime, end_time: datetime, limit: int = 10) -> List[Dict]:
+        """Search for similar conversation summaries using vector similarity"""
+        try:
+            # Call the Supabase function for semantic search
+            result = self.supabase.rpc(
+                'search_similar_conversations',
+                {
+                    'query_embedding': query_embedding,
+                    'match_threshold': 0.7,
+                    'match_count': limit
+                }
+            ).execute()
+            
+            # Filter by time range
+            filtered = [
+                item for item in result.data
+                if start_time.isoformat() <= item.get('created_at', '') <= end_time.isoformat()
+            ]
+            
+            return filtered
+        except Exception as e:
+            print(f"Error in semantic search for summaries: {e}")
+            return self._get_recent_summaries(start_time, end_time)
+    
+    def _semantic_search_events(self, query_embedding: List[float], start_time: datetime, end_time: datetime, limit: int = 10) -> List[Dict]:
+        """Search for similar memory events using vector similarity"""
+        try:
+            # Call the Supabase function for semantic search
+            result = self.supabase.rpc(
+                'search_similar_events',
+                {
+                    'query_embedding': query_embedding,
+                    'match_threshold': 0.7,
+                    'match_count': limit
+                }
+            ).execute()
+            
+            # Filter by time range
+            filtered = [
+                item for item in result.data
+                if start_time.isoformat() <= item.get('event_time', '') <= end_time.isoformat()
+            ]
+            
+            return filtered
+        except Exception as e:
+            print(f"Error in semantic search for events: {e}")
+            return self._get_recent_events(start_time, end_time)
     
     def _get_recent_summaries(self, start_time: datetime, end_time: datetime) -> List[Dict]:
         """Get conversation summaries within time range"""

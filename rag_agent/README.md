@@ -10,11 +10,13 @@ An Agentic RAG (Retrieval Augmented Generation) system that helps Alzheimer's pa
 - **Memory Events**: Extracts important events (meals, medications, visitors, activities)
 - **Topics & Key Points**: Identifies discussion topics and important points
 
-### 🤖 Agentic RAG
+### 🤖 Agentic RAG with Vector Embeddings
+- **Semantic Search**: Uses OpenAI embeddings for intelligent similarity matching
 - **Natural Language Queries**: Ask questions like "What did I do yesterday?"
 - **Context-Aware Responses**: Uses retrieved memories to provide accurate answers
 - **Temporal Reasoning**: Understands time-based queries (yesterday, this week, etc.)
 - **Person-Centric**: Can query by person name ("What did Harry and I talk about?")
+- **Vector Similarity**: Finds relevant memories even with different wording
 
 ### 📊 Data Processing
 - **Automatic Analysis**: Processes audio transcriptions using GPT-4
