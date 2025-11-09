@@ -1,5 +1,13 @@
 //
 //  MemoryEntry.swift
+//  Memerai
+//
+//  Created by Rae Wang on 11/9/25.
+//
+
+
+//
+//  MemoryEntry.swift
 //  Memora
 //
 //  Created by Rae Wang on 11/8/25.
@@ -21,4 +29,3 @@ struct MemoryEntry: Identifiable, Codable {
         self.createdAt = createdAt
     }
 }
-

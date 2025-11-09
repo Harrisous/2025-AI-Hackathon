@@ -47,17 +47,21 @@ class SpeechManager: ObservableObject {
     }
     
     func speak(_ text: String) {
-        // Stop any current speech
-        stopSpeaking()
-        
         // Don't speak if muted
         guard !isMuted else {
             return
         }
         
-        // Fetch audio from OpenAI TTS
-        Task {
-            await fetchAndPlayAudio(text: text)
+        // If currently speaking or processing, queue this text instead of interrupting
+        if isSpeaking || isProcessingQueue {
+            speechQueue.append(text)
+            // Queue will be processed automatically when current audio finishes
+        } else {
+            // Not currently speaking, start immediately
+            isProcessingQueue = true
+            Task {
+                await fetchAndPlayAudio(text: text, waitForCompletion: true)
+            }
         }
     }
     
@@ -72,6 +76,12 @@ class SpeechManager: ObservableObject {
             )
             
             guard let url = URL(string: "https://api.openai.com/v1/audio/speech") else {
+                await MainActor.run {
+                    if waitForCompletion {
+                        self.isProcessingQueue = false
+                        self.processSpeechQueue()
+                    }
+                }
                 return
             }
             
@@ -87,36 +97,113 @@ class SpeechManager: ObservableObject {
             guard let httpResponse = response as? HTTPURLResponse,
                   httpResponse.statusCode == 200 else {
                 print("Failed to get audio from OpenAI TTS")
+                await MainActor.run {
+                    if waitForCompletion {
+                        self.isProcessingQueue = false
+                        self.processSpeechQueue()
+                    }
+                }
                 return
             }
             
             // Play audio
-                   await MainActor.run {
-                       playAudio(data: data, waitForCompletion: waitForCompletion)
-                   }
+            await MainActor.run {
+                playAudio(data: data, waitForCompletion: waitForCompletion)
+            }
             
         } catch {
             print("Error fetching TTS audio: \(error)")
+            await MainActor.run {
+                if waitForCompletion {
+                    self.isProcessingQueue = false
+                    self.processSpeechQueue()
+                }
+            }
         }
     }
     
     private func playAudio(data: Data, waitForCompletion: Bool = false) {
+        // Stop any currently playing audio first
+        if let currentPlayer = audioPlayer {
+            currentPlayer.stop()
+            currentPlayer.delegate = nil
+        }
+        
         do {
+            // Ensure audio session is active and configured
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+            
             audioPlayer = try AVAudioPlayer(data: data)
-            audioPlayer?.delegate = audioDelegate
-            audioPlayer?.prepareToPlay()
-            audioPlayer?.play()
-            isSpeaking = true
-            isPaused = false
-        } catch {
-            print("Error playing audio: \(error)")
-            isSpeaking = false
-            if waitForCompletion {
-                // Continue processing queue even if one fails
+            guard let player = audioPlayer else {
+                print("Error: Failed to create audio player")
+                isSpeaking = false
                 isProcessingQueue = false
                 if !speechQueue.isEmpty {
                     processSpeechQueue()
                 }
+                return
+            }
+            
+            player.delegate = audioDelegate
+            player.prepareToPlay()
+            
+            // Set speaking state optimistically, but verify it actually plays
+            isSpeaking = true
+            isPaused = false
+            
+            // Play and check if it actually started
+            let didPlay = player.play()
+            
+            if !didPlay {
+                print("Error: Audio player play() returned false - audio may not play")
+                // Don't reset isSpeaking immediately - let the verification Task handle it
+            }
+            
+            // Verify playback after a brief delay
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds - give it more time to start
+                
+                // Check if audio is actually playing
+                if let currentPlayer = self.audioPlayer, currentPlayer.isPlaying {
+                    // Audio is playing correctly - state is already set correctly
+                    print("✓ Audio is playing successfully")
+                } else {
+                    // Audio didn't start or stopped - reset state and process queue
+                    print("⚠ Warning: Audio is not playing - audio may have failed to start")
+                    print("   isSpeaking: \(self.isSpeaking), isProcessingQueue: \(self.isProcessingQueue)")
+                    print("   audioPlayer exists: \(self.audioPlayer != nil)")
+                    print("   audioPlayer.isPlaying: \(self.audioPlayer?.isPlaying ?? false)")
+                    
+                    // Clean up
+                    self.audioPlayer?.stop()
+                    self.audioPlayer = nil
+                    self.isSpeaking = false
+                    
+                    // Always reset processing queue and continue with next item
+                    if self.isProcessingQueue {
+                        self.isProcessingQueue = false
+                        // Process queue to continue with next message
+                        if !self.speechQueue.isEmpty {
+                            print("   Processing next item in queue...")
+                            self.processSpeechQueue()
+                        }
+                    }
+                }
+            }
+            
+            // If not waiting for completion, the delegate will handle queue processing
+            // when audio finishes
+            
+        } catch {
+            print("Error playing audio: \(error.localizedDescription)")
+            isSpeaking = false
+            isProcessingQueue = false
+            audioPlayer = nil
+            // Continue processing queue even if one fails
+            if !speechQueue.isEmpty {
+                processSpeechQueue()
             }
         }
     }
@@ -260,10 +347,10 @@ class SpeechManager: ObservableObject {
         guard !isProcessingQueue && !speechQueue.isEmpty else { return }
         
         isProcessingQueue = true
-        let sentence = speechQueue.removeFirst()
+        let text = speechQueue.removeFirst()
         
         Task {
-            await fetchAndPlayAudio(text: sentence, waitForCompletion: true)
+            await fetchAndPlayAudio(text: text, waitForCompletion: true)
         }
     }
     
@@ -272,6 +359,8 @@ class SpeechManager: ObservableObject {
         audioPlayer = nil
         isSpeaking = false
         isPaused = false
+        isProcessingQueue = false
+        speechQueue.removeAll()
     }
     
     func pauseSpeaking() {
@@ -310,13 +399,16 @@ class AudioPlayerDelegate: NSObject, AVAudioPlayerDelegate {
         Task { @MainActor in
             guard let manager = manager else { return }
             
+            print("Audio finished playing - success: \(flag)")
+            
+            // Always reset speaking state
+            manager.isSpeaking = false
+            manager.isPaused = false
+            
             // If we're processing a queue, continue with next item
             if manager.isProcessingQueue {
                 manager.isProcessingQueue = false
                 manager.processSpeechQueue()
-            } else {
-                manager.isSpeaking = false
-                manager.isPaused = false
             }
         }
     }
@@ -325,13 +417,16 @@ class AudioPlayerDelegate: NSObject, AVAudioPlayerDelegate {
         Task { @MainActor in
             guard let manager = manager else { return }
             
+            print("Audio decode error: \(error?.localizedDescription ?? "Unknown error")")
+            
+            // Always reset speaking state
+            manager.isSpeaking = false
+            manager.isPaused = false
+            
             // If we're processing a queue, continue with next item even on error
             if manager.isProcessingQueue {
                 manager.isProcessingQueue = false
                 manager.processSpeechQueue()
-            } else {
-                manager.isSpeaking = false
-                manager.isPaused = false
             }
         }
     }

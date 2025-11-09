@@ -1,5 +1,13 @@
 //
 //  MemoryGalleryView.swift
+//  Memerai
+//
+//  Created by Rae Wang on 11/9/25.
+//
+
+
+//
+//  MemoryGalleryView.swift
 //  Memora
 //
 //  Created by Rae Wang on 11/8/25.
@@ -101,4 +109,3 @@ struct MemoryGalleryView: View {
     .previewInterfaceOrientation(.landscapeLeft)
     .previewLayout(.fixed(width: 1180, height: 820))
 }
-

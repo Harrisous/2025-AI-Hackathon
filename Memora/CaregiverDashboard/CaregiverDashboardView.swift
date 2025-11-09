@@ -1,5 +1,13 @@
 //
 //  CaregiverDashboardView.swift
+//  Memerai
+//
+//  Created by Rae Wang on 11/9/25.
+//
+
+
+//
+//  CaregiverDashboardView.swift
 //  Memora
 //
 //  Created by Rae Wang on 11/8/25.
@@ -47,4 +55,3 @@ struct SafariView: UIViewControllerRepresentable {
         CaregiverDashboardView()
     }
 }
-

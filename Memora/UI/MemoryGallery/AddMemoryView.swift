@@ -1,5 +1,13 @@
 //
 //  AddMemoryView.swift
+//  Memerai
+//
+//  Created by Rae Wang on 11/9/25.
+//
+
+
+//
+//  AddMemoryView.swift
 //  Memora
 //
 //  Created by Rae Wang on 11/8/25.
@@ -162,4 +170,3 @@ struct CameraView: UIViewControllerRepresentable {
 #Preview {
     AddMemoryView(memoryStorage: MemoryStorage.shared)
 }
-

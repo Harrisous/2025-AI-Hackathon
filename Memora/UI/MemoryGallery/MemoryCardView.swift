@@ -1,5 +1,13 @@
 //
 //  MemoryCardView.swift
+//  Memerai
+//
+//  Created by Rae Wang on 11/9/25.
+//
+
+
+//
+//  MemoryCardView.swift
 //  Memora
 //
 //  Created by Rae Wang on 11/8/25.
@@ -70,4 +78,3 @@ struct MemoryCardView: View {
         }
     }
 }
-

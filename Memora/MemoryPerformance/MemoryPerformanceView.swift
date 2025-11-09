@@ -1,5 +1,13 @@
 //
 //  MemoryPerformanceView.swift
+//  Memerai
+//
+//  Created by Rae Wang on 11/9/25.
+//
+
+
+//
+//  MemoryPerformanceView.swift
 //  Memora
 //
 //  Created by Rae Wang on 11/8/25.
@@ -45,4 +53,3 @@ struct MemoryPerformanceView: View {
     .previewInterfaceOrientation(.landscapeLeft)
     .previewLayout(.fixed(width: 1180, height: 820))
 }
-
