@@ -7,8 +7,8 @@ Bot initiates conversation proactively
 from flask import Flask, render_template, request, jsonify, session
 from flask_cors import CORS
 from memerai_rag_system import MemerAIRAG
-from complete_memory_system import CompleteMemorySystem
-from cognitive_improvement_system import CognitiveImprovementSystem
+# from complete_memory_system import CompleteMemorySystem  # Not needed for basic API
+# from cognitive_improvement_system import CognitiveImprovementSystem  # Not needed for basic API
 # from dynamic_evaluator import DynamicConversationFlow  # Dynamic questions from real data!
 from simple_evaluator import SimpleConversationFlow  # Static - reliable and tested
 import secrets
@@ -20,8 +20,8 @@ CORS(app)
 
 # Initialize systems
 rag = MemerAIRAG()
-memory_system = CompleteMemorySystem()
-cognitive_system = CognitiveImprovementSystem()
+# memory_system = CompleteMemorySystem()  # Commented out for Railway deployment
+# cognitive_system = CognitiveImprovementSystem()  # Commented out for Railway deployment
 
 # Store active sessions
 sessions = {}
@@ -43,8 +43,8 @@ def start_conversation():
         # Create session
         session_id = secrets.token_hex(8)
         
-        # Start cognitive tracking
-        cognitive_session = cognitive_system.start_session(days_back=0)
+        # Start cognitive tracking (disabled for Railway)
+        # cognitive_session = cognitive_system.start_session(days_back=0)
         
         # Get daily memory check (patient name is John)
         check = rag.daily_memory_check(days_back=0, patient_name="John")
@@ -63,8 +63,8 @@ def start_conversation():
         
         # Store session
         sessions[session_id] = {
-            'cognitive_session_id': cognitive_session['session_id'],
-            'start_time': cognitive_session['start_time'],
+            # 'cognitive_session_id': cognitive_session['session_id'],
+            # 'start_time': cognitive_session['start_time'],
             'current_memory': check.get('memory'),
             'all_memories': check.get('all_memories', []),
             'conversation_flow': conversation_flow,  # Simple deterministic flow
