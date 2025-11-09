@@ -16,7 +16,8 @@ enum Palette {
     static let shadow     = Color.black.opacity(0.08)
     static let recallButton = Color(hex: "E2B59A") // Easy to adjust
     static let settingColor    = Color(hex:"016B61")
-    static let button = Color (hex:"9ECFD4")
+    static let button = Color(hex:"9ECFD4")
+    static let button2 = Color(hex:"B8D4D8") // Lighter shade for secondary buttons
 }
 
 enum TypeStyle {

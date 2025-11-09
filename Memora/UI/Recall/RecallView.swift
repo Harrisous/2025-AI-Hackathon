@@ -8,12 +8,15 @@
 import SwiftUI
 
 struct RecallPlaceholderView: View {
-    @StateObject private var chatViewModel: ChatViewModel
+    @StateObject private var trainingViewModel: MemoryTrainingViewModel
     @State private var sidebarExpanded = false
     
     init() {
-        // Initialize chat view model with API key
-        _chatViewModel = StateObject(wrappedValue: ChatViewModel(apiKey: APIConfig.openAIAPIKey))
+        // Initialize memory training view model with backend URL and API key
+        _trainingViewModel = StateObject(wrappedValue: MemoryTrainingViewModel(
+            backendURL: APIConfig.memoryTrainingBackendURL,
+            apiKey: APIConfig.openAIAPIKey
+        ))
     }
     
     var body: some View {
@@ -25,17 +28,28 @@ struct RecallPlaceholderView: View {
                     
                     VStack(spacing: 24) {
                         // Title at top middle
-                        Text("Memory Recall")
+                        Text("Memory Training")
                             .font(.system(size: 72, design: .serif).weight(.semibold))
                             .foregroundColor(Color(red: 0.184, green: 0.165, blue: 0.145))
                             .multilineTextAlignment(.center)
                             .padding(.top, 30)
                         
+                        // Progress indicator
+                        if trainingViewModel.phase == .training {
+                            HStack {
+                                Text("Question \(trainingViewModel.currentQuestionNumber)/\(trainingViewModel.totalQuestions)")
+                                    .font(.system(size: 20, design: .rounded))
+                                    .foregroundColor(Color(red: 0.184, green: 0.165, blue: 0.145).opacity(0.7))
+                                Spacer()
+                            }
+                            .padding(.horizontal, 30)
+                        }
+                        
                         // Chat box - narrower and longer
-                        ChatView(viewModel: chatViewModel)
+                        MemoryTrainingChatView(viewModel: trainingViewModel)
                             .frame(width: geo.size.width * 0.95, height: geo.size.height * 0.85)
                             .frame(maxWidth: 800)
-                            .padding(.top, 50)
+                            .padding(.top, trainingViewModel.phase == .training ? 10 : 50)
                         
                         Spacer()
                     }
@@ -46,6 +60,12 @@ struct RecallPlaceholderView: View {
             }
         }
         .navigationBarHidden(true)
+        .onAppear {
+            // Start session when view appears
+            if trainingViewModel.phase == .notStarted {
+                trainingViewModel.startSession()
+            }
+        }
     }
 }
 

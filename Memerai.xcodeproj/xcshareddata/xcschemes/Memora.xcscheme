@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "21C30E382EBEF52B00DB8ED7"
-               BuildableName = "Memora.app"
-               BlueprintName = "Memora"
-               ReferencedContainer = "container:Memora.xcodeproj">
+               BuildableName = "Memerai.app"
+               BlueprintName = "Memerai"
+               ReferencedContainer = "container:Memerai.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -36,9 +36,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "21C30E452EBEF52C00DB8ED7"
-               BuildableName = "MemoraTests.xctest"
-               BlueprintName = "MemoraTests"
-               ReferencedContainer = "container:Memora.xcodeproj">
+               BuildableName = "MemeraiTests.xctest"
+               BlueprintName = "MemeraiTests"
+               ReferencedContainer = "container:Memerai.xcodeproj">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -47,9 +47,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "21C30E4F2EBEF52C00DB8ED7"
-               BuildableName = "MemoraUITests.xctest"
-               BlueprintName = "MemoraUITests"
-               ReferencedContainer = "container:Memora.xcodeproj">
+               BuildableName = "MemeraiUITests.xctest"
+               BlueprintName = "MemeraiUITests"
+               ReferencedContainer = "container:Memerai.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -69,9 +69,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "21C30E382EBEF52B00DB8ED7"
-            BuildableName = "Memora.app"
-            BlueprintName = "Memora"
-            ReferencedContainer = "container:Memora.xcodeproj">
+            BuildableName = "Memerai.app"
+            BlueprintName = "Memerai"
+            ReferencedContainer = "container:Memerai.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <EnvironmentVariables>
@@ -93,9 +93,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "21C30E382EBEF52B00DB8ED7"
-            BuildableName = "Memora.app"
-            BlueprintName = "Memora"
-            ReferencedContainer = "container:Memora.xcodeproj">
+            BuildableName = "Memerai.app"
+            BlueprintName = "Memerai"
+            ReferencedContainer = "container:Memerai.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
