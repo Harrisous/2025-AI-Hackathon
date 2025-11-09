@@ -9,6 +9,7 @@ Interactive memory training sessions using OpenAI's language models.
 - **Intelligent evaluation**: LLM evaluates answers with hints for incorrect responses
 - **Session tracking**: Tracks attempts, success rates, and timestamps
 - **Conversation logging**: Saves complete session history
+- **REST API**: Flask backend for iPad app and other frontends
 
 ## Setup
 
@@ -22,6 +23,8 @@ export OPENAI_API_KEY="your-key-here"
 ```
 
 ## Usage
+
+### Command Line Interface
 
 Run a training session:
 ```bash
@@ -37,6 +40,22 @@ Configure timeouts:
 ```bash
 python memory_trainer.py --warmup-timeout 180 --question-timeout 30 --max-session 900
 ```
+
+### Flask API (for iPad app)
+
+Run the API server:
+```bash
+python api.py
+```
+
+Server runs on `http://localhost:5000`
+
+Test the API:
+```bash
+python test_api.py
+```
+
+See [API_GUIDE.md](API_GUIDE.md) for complete API documentation with endpoints and examples.
 
 **Note**: GPT-5 models only support default temperature (1.0) - custom temperature values are not supported.
 
