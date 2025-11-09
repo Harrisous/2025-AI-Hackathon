@@ -210,6 +210,10 @@
 # __marimo__/
 .DS_Store
 *.jpg
+ios_app/Memora/Assets.xcassets/AppIcon.appiconset/appicon.png
+ios_app/Memora/Assets.xcassets/LaunchPage.imageset/LaunchPage.png
+ios_app/Memora/Assets.xcassets/LaunchPage0.imageset/LaunchPage.png
+ios_app/Memora/Assets.xcassets/memory_ball.imageset/memory_ball.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -420,5 +424,4 @@ marimo/_lsp/
 __marimo__/
 
 *.jpg
-*.png
 *.wav
