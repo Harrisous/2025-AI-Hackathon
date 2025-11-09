@@ -16,28 +16,39 @@ def fuzzy_match(word1, word2, threshold=0.75):
     return SequenceMatcher(None, word1.lower(), word2.lower()).ratio() >= threshold
 
 def semantic_match(user_answer, expected_keywords, context=""):
-    """Use GPT to check if answer is semantically correct"""
+    """Use GPT to check if answer is semantically correct with detailed context"""
     try:
+        print(f"🤖 GPT Semantic Check: '{user_answer}' vs {expected_keywords}")
         openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         
-        prompt = f"""Is the user's answer semantically correct or close enough?
+        prompt = f"""You are evaluating an Alzheimer's patient's answer. Be generous but accurate.
 
-Expected answer: {', '.join(expected_keywords)}
+Question: {context}
+Expected answers: {', '.join(expected_keywords)}
 User said: "{user_answer}"
-Context: {context}
+
+Rules:
+1. If user asks "was it X?" and X is correct → YES
+2. If user says correct name/thing → YES  
+3. If user says wrong name/thing → NO (even if related)
+4. If user says relationship (sister/brother) when name expected → YES
+5. Typos are OK → YES
+6. Similar concepts (cake/pastry) → YES
+7. Wrong person (Harry when Rae expected) → NO
 
 Examples:
-- Expected: "cake", User: "pastry" → YES (very similar)
-- Expected: "cake", User: "chips" → NO (different)
-- Expected: "chocolate", User: "choclate" → YES (typo)
+- Expected: "birthday", User: "was it my birthday?" → YES
+- Expected: "rae", User: "harry" → NO (wrong person!)
 - Expected: "rae", User: "sister" → YES (correct relationship)
+- Expected: "rae", User: "is that mrinal?" → NO (wrong name!)
+- Expected: "cake", User: "pastry" → YES (similar)
 
 Answer ONLY "YES" or "NO":"""
         
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a semantic similarity checker. Answer only YES or NO."},
+                {"role": "system", "content": "You evaluate Alzheimer's patient answers. Be generous but accurate. Answer only YES or NO."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0,
@@ -45,8 +56,10 @@ Answer ONLY "YES" or "NO":"""
         )
         
         answer = response.choices[0].message.content.strip().upper()
+        print(f"✅ GPT says: {answer}")
         return answer == "YES"
-    except:
+    except Exception as e:
+        print(f"❌ GPT semantic match failed: {e}")
         return False
 
 class SimpleConversationFlow:
@@ -130,33 +143,95 @@ class SimpleConversationFlow:
             return None
         return self.flow[self.current_step]['question']
     
-    def is_question(self, answer):
-        """Check if the user is asking a question (but not statements like 'was it my birthday?')"""
-        answer_lower = answer.lower().strip()
+    def is_question(self, text):
+        """Check if the user is asking a question"""
+        question_words = ['what', 'who', 'when', 'where', 'why', 'how', 'which', 'can you', 'could you', 'would you', 'tell me']
+        text_lower = text.lower().strip()
         
-        # If it's just a single word with ?, it's likely an uncertain answer, not a question
-        words = answer_lower.replace('?', '').strip().split()
-        if len(words) <= 2 and '?' in answer:
-            return False  # "frame?" or "chocolate?" is an answer, not a question
+        # Check for question mark
+        if '?' in text:
+            return True
         
-        # Check for statement patterns that aren't really questions
-        # "was it my birthday?" = statement, not question
-        # "is it a mobile?" = real question
-        statement_patterns = [
-            'was it my',
-            'was it your',
-            'is it my',
-            'is it your',
-            'it was',
-            'it is'
-        ]
-        
-        for pattern in statement_patterns:
-            if pattern in answer_lower:
-                return False  # It's a statement/answer, not a question
-        
-        question_indicators = ['who', 'what', 'when', 'where', 'why', 'how']
-        return any(answer_lower.startswith(word) for word in question_indicators)
+        # Check for question words at the start
+        return any(text_lower.startswith(qw) for qw in question_words)
+    
+    def generate_smart_feedback(self, user_answer, step, attempt):
+        """Use GPT to generate intelligent, context-aware feedback for wrong answers"""
+        try:
+            print(f"🤖 Generating smart feedback for wrong answer: '{user_answer}'")
+            openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            
+            # Get expected answer and question context
+            expected = ', '.join(step['expected_keywords'])
+            question = step['question']
+            
+            prompt = f"""You are helping an Alzheimer's patient. They gave a wrong answer. Give warm, helpful feedback.
+
+Question: "{question}"
+Expected answer: {expected}
+User said: "{user_answer}"
+Attempt number: {attempt + 1}
+
+Rules:
+1. If they said a WRONG NAME (like "Harry" when "Rae" expected), gently correct: "Not quite, John. It was actually Rae, your sister, who visited in the morning. Harry came later!"
+2. If they're CLOSE but wrong, encourage: "You're thinking in the right direction..."
+3. If they're COMPLETELY WRONG, give a gentle hint
+4. Always be warm, encouraging, and patient
+5. Use their name "John" 
+6. Keep it under 2 sentences
+
+Generate a warm, helpful response:"""
+            
+            response = openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a compassionate memory care assistant. Be warm and encouraging."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=100
+            )
+            
+            feedback = response.choices[0].message.content.strip()
+            print(f"✅ Smart feedback: {feedback}")
+            return feedback
+        except Exception as e:
+            print(f"❌ Smart feedback failed: {e}")
+            return None
+    
+    def is_greeting_response(self, text):
+        """Use GPT to check if this is a response to 'How are you feeling?' vs an actual answer"""
+        try:
+            print(f"🤖 Checking if '{text}' is a greeting response using GPT...")
+            openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            
+            prompt = f"""Is this a response to "How are you feeling today?" or an answer to a memory question?
+
+User said: "{text}"
+
+Context: We're testing Alzheimer's patients. If they say "great", "good", "fine" etc. in response to "How are you feeling?", that's a GREETING response. If they're answering a question about their birthday or family, that's a MEMORY answer.
+
+Answer ONLY "GREETING" or "MEMORY":"""
+            
+            response = openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You classify user responses. Answer only GREETING or MEMORY."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0,
+                max_tokens=5
+            )
+            
+            answer = response.choices[0].message.content.strip().upper()
+            print(f"✅ GPT classified as: {answer}")
+            return answer == "GREETING"
+        except Exception as e:
+            print(f"❌ GPT call failed: {e}")
+            # If GPT fails, assume short positive responses are greetings
+            fallback = len(text.split()) <= 3
+            print(f"📝 Using fallback: {fallback}")
+            return fallback
     
     def answer_user_question(self, question, current_step):
         """Answer user's question using context"""
@@ -190,7 +265,7 @@ class SimpleConversationFlow:
             return "That's a great question! Let me help you - we're talking about your birthday celebration yesterday with Rae and Harry. 💕"
     
     def evaluate_answer(self, answer):
-        """Simple keyword matching"""
+        """Simple keyword matching with smart greeting handling"""
         if self.current_step >= len(self.flow):
             return {
                 'correct': True,
@@ -214,8 +289,21 @@ class SimpleConversationFlow:
                 'is_user_question': True
             }
         
+        # Handle positive responses to "How are you feeling?" - use GPT to detect sentiment
+        positive_feelings = ['great', 'good', 'fine', 'well', 'okay', 'ok', 'nice', 'wonderful', 'happy', 'better']
+        if any(feeling in answer_lower for feeling in positive_feelings):
+            # Use GPT to check if this is a greeting response or actual answer
+            if self.is_greeting_response(answer):
+                return {
+                    'correct': False,
+                    'response': "That's wonderful to hear, John! 😊 Now, let me ask you something...",
+                    'next_question': step['question'],
+                    'is_end': False,
+                    'is_greeting': True
+                }
+        
         # Handle acknowledgments like "okay", "thanks", "got it" - continue with same question
-        acknowledgments = ['okay', 'ok', 'thanks', 'thank you', 'got it', 'i see', 'alright', 'understood']
+        acknowledgments = ['thanks', 'thank you', 'got it', 'i see', 'alright', 'understood']
         if any(ack == answer_lower for ack in acknowledgments):
             return {
                 'correct': False,
@@ -289,15 +377,19 @@ class SimpleConversationFlow:
                 'is_end': next_q is None
             }
         else:
-            # Wrong answer: give progressive hint
+            # Wrong answer: give intelligent, context-aware feedback using GPT
             if self.current_step not in self.wrong_attempts:
                 self.wrong_attempts[self.current_step] = 0
             
             attempt = self.wrong_attempts[self.current_step]
             
-            # Get hint based on attempt number
-            if 'hints' in step:
-                # Use progressive hints
+            # Use GPT to generate smart feedback for wrong answers
+            smart_feedback = self.generate_smart_feedback(answer, step, attempt)
+            
+            if smart_feedback:
+                hint = smart_feedback
+            elif 'hints' in step:
+                # Fallback to progressive hints
                 hint_index = min(attempt, len(step['hints']) - 1)
                 hint = step['hints'][hint_index]
             else:
