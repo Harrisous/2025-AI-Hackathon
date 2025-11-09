@@ -1,6 +1,9 @@
 -- Person-Centric Memory Graph
 -- Organizes memories by person name
 
+-- Enable pgvector extension
+CREATE EXTENSION IF NOT EXISTS vector;
+
 -- Person Memories Table (main graph structure)
 CREATE TABLE IF NOT EXISTS person_memories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
