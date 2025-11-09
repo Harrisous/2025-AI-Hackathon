@@ -1,5 +1,5 @@
 //
-//  RecallView.swift
+//  SettingsView.swift
 //  Memora
 //
 //  Created by Rae Wang on 11/8/25.
@@ -7,41 +7,30 @@
 
 import SwiftUI
 
-struct RecallPlaceholderView: View {
-    @StateObject private var chatViewModel: ChatViewModel
+struct SettingsView: View {
     @State private var sidebarExpanded = false
-    
-    init() {
-        // Initialize chat view model with API key
-        _chatViewModel = StateObject(wrappedValue: ChatViewModel(apiKey: APIConfig.openAIAPIKey))
-    }
     
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .topLeading) {
-                // Main content
                 ZStack {
                     Palette.paper.ignoresSafeArea()
                     
-                    VStack(spacing: 24) {
-                        // Title at top middle
-                        Text("Memory Recall")
+                    VStack(spacing: 20) {
+                        Text("Settings")
                             .font(.system(size: 72, design: .serif).weight(.semibold))
                             .foregroundColor(Color(red: 0.184, green: 0.165, blue: 0.145))
                             .multilineTextAlignment(.center)
                             .padding(.top, 30)
                         
-                        // Chat box - narrower and longer
-                        ChatView(viewModel: chatViewModel)
-                            .frame(width: geo.size.width * 0.95, height: geo.size.height * 0.85)
-                            .frame(maxWidth: 800)
-                            .padding(.top, 50)
+                        Text("Settings coming soon...")
+                            .font(.system(size: 24, design: .rounded))
+                            .foregroundColor(Color(red: 0.184, green: 0.165, blue: 0.145).opacity(0.8))
                         
                         Spacer()
                     }
                 }
                 
-                // Foldable sidebar
                 FoldableSidebar(isExpanded: $sidebarExpanded)
             }
         }
@@ -51,7 +40,7 @@ struct RecallPlaceholderView: View {
 
 #Preview {
     NavigationStack {
-        RecallPlaceholderView()
+        SettingsView()
     }
     .previewInterfaceOrientation(.landscapeLeft)
     .previewLayout(.fixed(width: 1180, height: 820))

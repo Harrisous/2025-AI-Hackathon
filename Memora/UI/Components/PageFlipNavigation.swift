@@ -1,25 +1,83 @@
-import SwiftUI
+//
+//  PageFlipNavigation.swift
+//  Memora
+//
+//  Created by Rae Wang on 11/8/25.
+//
 
-struct HomeView: View {
+import SwiftUI
+import UIKit
+
+// This file is no longer used - kept for reference only
+// The app now uses standard NavigationStack navigation
+struct PageFlipNavigationContainer: View {
+    @State private var showRecall = false
+    
+    var body: some View {
+        ZStack {
+            // Use original HomeView (no arguments)
+            HomeView()
+            
+            // Page curl presenter - overlays on top when showRecall is true
+            PageCurlPresenter(isPresented: $showRecall) {
+                AnyView(RecallPlaceholderViewWithDismiss(showRecall: $showRecall))
+            }
+        }
+    }
+}
+
+// Page curl transition modifier using CATransition
+struct PageCurlTransitionModifier: ViewModifier {
+    let curled: Bool
+    
+    func body(content: Content) -> some View {
+        content
+            .background(
+                PageCurlBackground(curled: curled)
+                    .allowsHitTesting(false)
+            )
+    }
+}
+
+struct PageCurlBackground: UIViewRepresentable {
+    let curled: Bool
+    
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.backgroundColor = .clear
+        return view
+    }
+    
+    func updateUIView(_ uiView: UIView, context: Context) {
+        // Apply page curl animation using CATransition
+        let transition = CATransition()
+        transition.type = CATransitionType(rawValue: "pageCurl")
+        transition.subtype = .fromRight
+        transition.duration = 0.6
+        transition.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        transition.fillMode = .both
+        uiView.layer.add(transition, forKey: "pageCurlTransition")
+    }
+}
+
+struct HomeViewWithNavigation: View {
+    @Binding var showRecall: Bool
     @State private var appear = false
     @State private var rotate = false
-
+    
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                // Soft background (journal vibe)
-                Palette.paper
-                    .ignoresSafeArea()
-
+                Palette.paper.ignoresSafeArea()
+                
                 ScrollView {
                     VStack(spacing: 28) {
-                        // Title + Date (centered at top)
                         VStack(spacing: 20) {
                             Text("Hi, John!")
                                 .font(.system(size: 72, design: .serif).weight(.semibold))
-                                .foregroundColor(Color(red: 0.184, green: 0.165, blue: 0.145)) // Explicit dark ink color
+                                .foregroundColor(Color(red: 0.184, green: 0.165, blue: 0.145))
                                 .multilineTextAlignment(.center)
-
+                            
                             Text(formattedToday())
                                 .font(.system(size: 32, design: .serif))
                                 .foregroundColor(Color(red: 0.184, green: 0.165, blue: 0.145).opacity(0.8))
@@ -27,18 +85,16 @@ struct HomeView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.top, 30)
-
-                        // Memory ball — large & rotating slowly
+                        
                         Image("memory_ball")
                             .resizable()
                             .scaledToFill()
                             .frame(
                                 width: min(geo.size.width * 0.7, 600),
                                 height: min(geo.size.width * 0.7, 600)
-                            ) // square (1:1)
+                            )
                             .clipped()
                             .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                            //.shadow(color: Palette.shadow, radius: 14, x: 0, y: 10)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 28, style: .continuous)
                                     .stroke(Palette.ink.opacity(0.06), lineWidth: 1)
@@ -47,11 +103,13 @@ struct HomeView: View {
                             .animation(.linear(duration: 60).repeatForever(autoreverses: false), value: rotate)
                             .opacity(appear ? 1 : 0)
                             .animation(.easeInOut(duration: 0.8).delay(0.15), value: appear)
-                            .padding(.top, 80)
-
-                        // Start Recall button
-                        NavigationLink {
-                            RecallPlaceholderView()
+                            .padding(.top, 90)
+                        
+                        // Start Recall button - triggers page flip
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.6)) {
+                                showRecall = true
+                            }
                         } label: {
                             HStack(spacing: 12) {
                                 Image(systemName: "play.circle.fill")
@@ -69,16 +127,14 @@ struct HomeView: View {
                         }
                         .padding(.top, 10)
                         
-                        // Menu buttons
+                        // Menu buttons - use NavigationLink for other pages
                         VStack(spacing: 2) {
-                            // MoCA Memory Test and Memory Gallery in same row
                             HStack(spacing: 0) {
                                 NavigationLink {
                                     MemoryTestView()
                                 } label: {
                                     MenuButton(icon: "brain.head.profile", title: "Memory Test", color: Palette.button)
                                         .padding(.vertical, 20)
-                                        //.padding(.horizontal,10)
                                         .padding(.trailing, 5)
                                 }
                                 
@@ -86,20 +142,18 @@ struct HomeView: View {
                                     MemoryGalleryView()
                                 } label: {
                                     MenuButton(icon: "photo.on.rectangle", title: "Memory Gallery", color: Palette.button)
-                                    .padding(.vertical, 20)
-                                    //.padding(.horizontal,10)
-                                    .padding(.leading, 5)
+                                        .padding(.vertical, 20)
+                                        .padding(.leading, 5)
                                 }
                             }
                             .padding(.horizontal, 40)
                             
-                            // Settings below
                             NavigationLink {
                                 SettingsView()
                             } label: {
                                 MenuButton(icon: "gearshape.fill", title: "Settings", color: Palette.settingColor)
                             }
-                            .padding(.vertical,10)
+                            .padding(.vertical, 10)
                             .padding(.horizontal, 40)
                         }
                         .padding(.top, 5)
@@ -116,8 +170,7 @@ struct HomeView: View {
         }
         .navigationBarHidden(true)
     }
-
-    // e.g., "November 7th, 2025"
+    
     private func formattedToday(_ date: Date = Date()) -> String {
         let df = DateFormatter()
         df.dateFormat = "MMMM d, yyyy"
@@ -138,38 +191,49 @@ struct HomeView: View {
     }
 }
 
-
-struct MenuButton: View {
-    let icon: String
-    let title: String
-    let color: Color
+struct RecallPlaceholderViewWithDismiss: View {
+    @Binding var showRecall: Bool
+    @StateObject private var chatViewModel: ChatViewModel
+    @State private var sidebarExpanded = false
+    @Environment(\.dismiss) var dismiss
+    
+    init(showRecall: Binding<Bool>) {
+        self._showRecall = showRecall
+        _chatViewModel = StateObject(wrappedValue: ChatViewModel(apiKey: APIConfig.openAIAPIKey))
+    }
     
     var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.system(size: 24))
-                .foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0))
-            
-            Text(title)
-                .font(.system(size: 24, design: .rounded).weight(.semibold))
-                .foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0))
-            
-            Spacer()
-            
-            Image(systemName: "chevron.right")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0))
+        GeometryReader { geo in
+            ZStack(alignment: .topLeading) {
+                ZStack {
+                    Palette.paper.ignoresSafeArea()
+                    
+                    VStack(spacing: 24) {
+                        Text("Memory Recall")
+                            .font(.system(size: 72, design: .serif).weight(.semibold))
+                            .foregroundColor(Color(red: 0.184, green: 0.165, blue: 0.145))
+                            .multilineTextAlignment(.center)
+                            .padding(.top, 30)
+                        
+                        ChatView(viewModel: chatViewModel)
+                            .frame(width: geo.size.width * 0.95, height: geo.size.height * 0.85)
+                            .frame(maxWidth: 800)
+                            .padding(.top, 50)
+                        
+                        Spacer()
+                    }
+                }
+                
+                FoldableSidebar(isExpanded: $sidebarExpanded)
+            }
         }
-        .padding(.vertical, 28)
-        .padding(.horizontal, 24)
-        .background(color)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: Palette.shadow, radius: 6, x: 0, y: 4)
+        .navigationBarHidden(true)
+        .onAppear {
+            // When view appears, ensure the binding is updated
+            if !showRecall {
+                showRecall = true
+            }
+        }
     }
 }
 
-#Preview {
-    NavigationStack { HomeView() }
-        .previewInterfaceOrientation(.landscapeLeft) // or .portrait
-        .previewLayout(.fixed(width: 1180, height: 820)) // iPad Air 11" points
-}
