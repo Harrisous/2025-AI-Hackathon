@@ -210,7 +210,6 @@
 # __marimo__/
 .DS_Store
 *.jpg
-*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
