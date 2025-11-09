@@ -160,4 +160,4 @@ if __name__ == '__main__':
     port = int(os.getenv('PORT', 5005))
     print(f"\n🖼️ Image Memory Chat UI running on port {port}")
     print("Show photos and ask recognition questions!\n")
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=False)
