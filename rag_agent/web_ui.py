@@ -6,13 +6,15 @@ Simple Web UI for Memory RAG Agent
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from memory_rag_agent import MemoryRAGAgent
+from memory_quiz_agent import MemoryQuizAgent
 import os
 
 app = Flask(__name__)
 CORS(app)
 
-# Initialize RAG agent
+# Initialize agents
 agent = MemoryRAGAgent()
+quiz_agent = MemoryQuizAgent()
 
 
 @app.route('/')
@@ -88,6 +90,62 @@ def get_stats():
                 'memory_events': events.count if hasattr(events, 'count') else 0,
                 'person_interactions': interactions.count if hasattr(interactions, 'count') else 0
             }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/quiz/question', methods=['GET'])
+def get_quiz_question():
+    """Generate a memory quiz question"""
+    try:
+        days_back = int(request.args.get('days_back', 1))
+        question_data = quiz_agent.generate_memory_question(days_back=days_back)
+        
+        if question_data.get('question'):
+            return jsonify({
+                'success': True,
+                'question': question_data['question'],
+                'question_id': str(hash(question_data['question'])),  # Simple ID
+                'context': {
+                    'expected_answer': question_data['expected_answer'],
+                    'full_context': question_data['context']
+                }
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': question_data.get('error', 'Could not generate question')
+            }), 404
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/quiz/evaluate', methods=['POST'])
+def evaluate_quiz_answer():
+    """Evaluate user's answer to a quiz question"""
+    try:
+        data = request.json
+        user_answer = data.get('answer', '')
+        expected_answer = data.get('expected_answer', '')
+        context = data.get('context', {})
+        
+        if not user_answer:
+            return jsonify({'error': 'No answer provided'}), 400
+        
+        evaluation = quiz_agent.evaluate_answer(user_answer, expected_answer, context)
+        
+        return jsonify({
+            'success': True,
+            'evaluation': evaluation
         })
         
     except Exception as e:
