@@ -17,19 +17,15 @@ import SwiftUI
 import SafariServices
 
 struct CaregiverDashboardView: View {
-    @State private var sidebarExpanded = false
-    let urlString = "https://sparklingly-kempt-terese.ngrok-free.dev/"
+    let urlString = "https://caregiver-dashboard-c0zm9isss-timxjls-projects.vercel.app/"
     
     var body: some View {
         GeometryReader { geo in
-            ZStack(alignment: .topLeading) {
-                ZStack {
-                    Palette.paper.ignoresSafeArea()
-                    
-                    SafariView(url: URL(string: urlString)!)
-                }
+            ZStack {
+                Palette.paper.ignoresSafeArea()
                 
-                FoldableSidebar(isExpanded: $sidebarExpanded)
+                SafariView(url: URL(string: urlString)!)
+                    //.padding(.top,20)
             }
         }
         .navigationBarHidden(true)

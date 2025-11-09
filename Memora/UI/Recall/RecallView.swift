@@ -27,30 +27,30 @@ struct RecallPlaceholderView: View {
                         // Two big buttons
                         VStack(spacing: 30) {
                             NavigationLink(destination: ImageTrainingView()) {
-                                HStack(spacing: 16) {
+                                HStack(spacing: 20) {
                                     Image(systemName: "photo.on.rectangle")
-                                        .font(.system(size: 40))
+                                        .font(.system(size: 50))
                                     Text("Image Training")
-                                        .font(.system(size: 36, design: .rounded).weight(.semibold))
+                                        .font(.system(size: 55, design: .rounded).weight(.semibold))
                                 }
                                 .foregroundColor(.white)
-                                .frame(width: 400, height: 120)
+                                .frame(width: 600, height: 300)
                                 .background(Palette.button)
-                                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
                                 .shadow(color: Palette.shadow, radius: 12, x: 0, y: 6)
                             }
                             
                             NavigationLink(destination: TextTrainingView()) {
-                                HStack(spacing: 16) {
+                                HStack(spacing: 20) {
                                     Image(systemName: "text.bubble")
-                                        .font(.system(size: 40))
+                                        .font(.system(size: 50))
                                     Text("Text Training")
-                                        .font(.system(size: 36, design: .rounded).weight(.semibold))
+                                        .font(.system(size: 55, design: .rounded).weight(.semibold))
                                 }
                                 .foregroundColor(.white)
-                                .frame(width: 400, height: 120)
-                                .background(Palette.button)
-                                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                                .frame(width: 600, height: 300)
+                                .background(Palette.imagebutton)
+                                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
                                 .shadow(color: Palette.shadow, radius: 12, x: 0, y: 6)
                             }
                         }

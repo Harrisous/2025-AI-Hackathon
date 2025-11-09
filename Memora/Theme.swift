@@ -11,13 +11,15 @@ enum Palette {
     static let background = Color("Cream")
     static let paper      = Color("Paper")
     static let ink        = Color("Ink")
-    static let blush      = Color("Blush")
+    static let blush      = Color(hex:"F0A04B")
     static let blueGray   = Color("BlueGray")
-    static let shadow     = Color.black.opacity(0.08)
+    static let shadow     = Color.black.opacity(0.09)
     static let recallButton = Color(hex: "E2B59A") // Easy to adjust
     static let settingColor    = Color(hex:"016B61")
     static let button = Color(hex:"9ECFD4")
     static let button2 = Color(hex:"B8D4D8") // Lighter shade for secondary buttons
+    static let recall = Color(hex: "B77466")
+    static let imagebutton = Color(hex:"748DAE")
 }
 
 enum TypeStyle {

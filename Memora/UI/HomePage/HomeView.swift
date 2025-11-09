@@ -7,8 +7,6 @@ enum NavigationDestination: Hashable {
     case memoryTest
     case memoryGallery
     case caregiverDashboard
-    case memoryPerformance
-    case settings
 }
 
 struct HomeView: View {
@@ -43,7 +41,7 @@ struct HomeView: View {
                                     .multilineTextAlignment(.center)
                             }
                             .frame(maxWidth: .infinity)
-                            .padding(.top, 30)
+                            .padding(.top, 50)
 
                             // Memory ball — large & rotating slowly
                             Image("memory_ball")
@@ -72,65 +70,39 @@ struct HomeView: View {
                                 HStack(spacing: 12) {
                                     Image(systemName: "play.circle.fill")
                                         .font(.system(size: 28))
-                                    Text("Start Recall")
+                                    Text("Start Memory Training")
+                                        .font(.system(size: 28))
                                 }
                                 .foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0))
                                 .font(.system(size: 30, design: .rounded).weight(.semibold))
-                                .padding(.vertical, 24)
-                                .padding(.horizontal, 40)
-                                //.background(Palette.recall)
+                                .padding(.vertical, 20)
+                                .padding(.horizontal, 30)
+                                .background(Palette.blush)
                                 .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                                 .shadow(color: Palette.shadow, radius: 10, x: 0, y: 6)
                                 .accessibilityLabel("Start Recall")
                             }
                             .padding(.top, 10)
                             
-                            // Menu buttons
-                            VStack(spacing: 2) {
-                                // MoCA Memory Test and Memory Gallery in same row
-                                HStack(spacing: 0) {
-                                    NavigationLink(value: NavigationDestination.memoryTest) {
-                                        MenuButton(icon: "brain.head.profile", title: "Memory Test", color: Palette.button)
-                                            .padding(.vertical, 20)
-                                            //.padding(.horizontal,10)
-                                            .padding(.trailing, 5)
-                                    }
-                                    .padding(.top,5)
-                                    
-                                    NavigationLink(value: NavigationDestination.memoryGallery) {
-                                        MenuButton(icon: "photo.on.rectangle", title: "Memory Gallery", color: Palette.button)
-
-                                        .padding(.vertical, 20)
-                                        //.padding(.horizontal,10)
-                                        .padding(.leading, 5)
-                                    }
-                                    .padding(.top,5)
+                            // Grid layout for menu buttons
+                            LazyVGrid(columns: [
+                                GridItem(.flexible(), spacing: 16),
+                                GridItem(.flexible(), spacing: 16)
+                            ], spacing: 20) {
+                                NavigationLink(value: NavigationDestination.memoryGallery) {
+                                    GridMenuButton(icon: "photo.on.rectangle", title: "Memory Gallery", color: Palette.button)
                                 }
-                                .padding(.horizontal, 40)
                                 
-                                // Caregiver Dashboard and Memory Performance in same row
-                                HStack(spacing: 0) {
-                                    NavigationLink(value: NavigationDestination.caregiverDashboard) {
-                                        MenuButton(icon: "person.2.fill", title: "Caregiver Dashboard", color: Palette.button2)
-                                            .padding(.vertical, 20)
-                                            .padding(.trailing, 5)
-                                    }
-                                    
-                                    NavigationLink(value: NavigationDestination.memoryPerformance) {
-                                        MenuButton(icon: "chart.line.uptrend.xyaxis", title: "Memory Performance", color: Palette.button2)
-                                            .padding(.vertical, 20)
-                                            .padding(.leading, 5)
-                                    }
+                                NavigationLink(value: NavigationDestination.memoryTest) {
+                                    GridMenuButton(icon: "brain.head.profile", title: "Memory Test", color: Palette.button)
                                 }
-                                .padding(.horizontal, 40)
                                 
-                                NavigationLink(value: NavigationDestination.settings) {
-                                    MenuButton(icon: "gearshape.fill", title: "Settings", color: Palette.settingColor)
+                                NavigationLink(value: NavigationDestination.caregiverDashboard) {
+                                    GridMenuButton(icon: "person.2.fill", title: "Caregiver Dashboard", color: Palette.button2)
                                 }
-                                .padding(.vertical,10)
-                                .padding(.horizontal, 40)
                             }
-                            .padding(.top, 5)
+                            .padding(.horizontal, 40)
+                            .padding(.top, 30)
                             .padding(.bottom, 10)
                         }
                         .frame(maxWidth: .infinity)
@@ -153,10 +125,6 @@ struct HomeView: View {
                         MemoryGalleryView()
                     case .caregiverDashboard:
                         CaregiverDashboardView()
-                    case .memoryPerformance:
-                        MemoryPerformanceView()
-                    case .settings:
-                        SettingsView()
                     }
                 }
             }
@@ -216,6 +184,31 @@ struct MenuButton: View {
         .background(color)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: Palette.shadow, radius: 6, x: 0, y: 4)
+    }
+}
+
+struct GridMenuButton: View {
+    let icon: String
+    let title: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 40))
+                .foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0))
+            
+            Text(title)
+                .font(.system(size: 22, design: .rounded).weight(.semibold))
+                .foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0))
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
+        .padding(.horizontal, 20)
+        .background(color)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shadow(color: Palette.shadow, radius: 8, x: 0, y: 4)
     }
 }
 
