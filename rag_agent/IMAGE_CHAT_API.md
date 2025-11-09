@@ -2,10 +2,10 @@
 
 ## 🚀 API Base URL
 ```
-https://sparklingly-kempt-terese.ngrok-free.dev
+https://2025-ai-hackathon-raspberry-api-api-production-bfcb.up.railway.app
 ```
 
-**Note:** This is the SAME ngrok URL, but now pointing to port 5005 (Image Chat)
+**Note:** This is deployed on Railway and works 24/7! No need to keep your laptop running.
 
 ---
 
@@ -132,7 +132,7 @@ import Foundation
 import UIKit
 
 class ImageMemoryService {
-    let baseURL = "https://sparklingly-kempt-terese.ngrok-free.dev"
+    let baseURL = "https://2025-ai-hackathon-raspberry-api-api-production-bfcb.up.railway.app"
     
     // Start image conversation
     func startImageConversation() async throws -> ImageConversationStart {
@@ -410,11 +410,11 @@ Accepts multiple variations:
 ### Test with cURL
 ```bash
 # Start conversation
-curl -X POST https://sparklingly-kempt-terese.ngrok-free.dev/api/start \
+curl -X POST https://2025-ai-hackathon-raspberry-api-api-production-bfcb.up.railway.app/api/start \
   -H "Content-Type: application/json"
 
 # Submit answer
-curl -X POST https://sparklingly-kempt-terese.ngrok-free.dev/api/answer \
+curl -X POST https://2025-ai-hackathon-raspberry-api-api-production-bfcb.up.railway.app/api/answer \
   -H "Content-Type: application/json" \
   -d '{
     "session_id": "your-session-id",
