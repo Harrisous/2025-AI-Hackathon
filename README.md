@@ -403,7 +403,7 @@ This project is part of the 2025 AI Hackathon. See LICENSE file for details.
 
 ## ⚠️ Important Notice
 
-**MemorAI is designed to support cognitive health and memory training. It is not a replacement for professional medical diagnosis, treatment, or advice. Always consult with healthcare professionals for medical concerns.**
+**MemorAI is designed to support cognitive health and memory training. It is not a replacement for professional medical diagnosis, treatment, or advice. Always consult with healthcare professionals for medical concerns**
 
 ---
 
